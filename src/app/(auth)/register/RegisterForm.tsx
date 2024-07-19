@@ -1,22 +1,40 @@
 'use client';
 
-import { RegisterSchema, registerSchema } from '@/lib/validationSchemas/registerSchema';
-import { Card, CardHeader, CardBody, CardFooter } from '@nextui-org/card';
+import { RegisterSchema } from '@/lib/validationSchemas/registerSchema';
+import { Card, CardBody, CardHeader } from '@nextui-org/card';
 import { Input } from '@nextui-org/input';
 import { GiPadlock } from 'react-icons/gi';
 import { Button } from '@nextui-org/react';
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { registerUser } from '@/app/actions/authActions';
 
 const RegisterForm = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
-  } = useForm<RegisterSchema>({ resolver: zodResolver(registerSchema), mode: 'onTouched' });
+    setError,
+    formState: { errors, isValid, isSubmitting },
+  } = useForm<RegisterSchema>({
+    // resolver: zodResolver(registerSchema),
+    mode: 'onTouched',
+  });
 
-  const onSubmit = (data: RegisterSchema) => {
-    console.log(data);
+  const onSubmit = async (data: RegisterSchema) => {
+    const result = await registerUser(data);
+
+    if (result.status === 'success') {
+      console.log('User registered successfully');
+    } else {
+      if (Array.isArray(result.error)) {
+        result.error.forEach((e) => {
+          const fieldName = e.path.join('.') as 'email' | 'name' | 'password';
+          // https://zod.dev/ERROR_HANDLING?id=zodissue
+          setError(fieldName, { message: e.message });
+        });
+      } else {
+        setError('root.serverError', { message: result.error });
+      }
+    }
   };
 
   return (
@@ -58,8 +76,9 @@ const RegisterForm = () => {
               isInvalid={!!errors.password}
               errorMessage={errors.password?.message}
             />
-            <Button isDisabled={!isValid} fullWidth color={'secondary'} type={'submit'}>
-              Login
+            {errors.root?.serverError && <p className={'text-danger text-sm'}>{errors.root.serverError.message}</p>}
+            <Button isLoading={isSubmitting} isDisabled={!isValid} fullWidth color={'secondary'} type={'submit'}>
+              Register
             </Button>
           </div>
         </form>
@@ -67,5 +86,4 @@ const RegisterForm = () => {
     </Card>
   );
 };
-
 export default RegisterForm;

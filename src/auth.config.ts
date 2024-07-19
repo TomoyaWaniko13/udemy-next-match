@@ -4,6 +4,7 @@ import type { NextAuthConfig } from 'next-auth';
 import { loginSchema } from '@/lib/validationSchemas/loginSchema';
 import { getUserByEmail } from '@/app/actions/authActions';
 import { compare } from 'bcryptjs';
+import { log } from 'node:util';
 
 export default {
   providers: [
@@ -20,6 +21,7 @@ export default {
 
           return user;
         }
+
         return null;
       },
     }),
